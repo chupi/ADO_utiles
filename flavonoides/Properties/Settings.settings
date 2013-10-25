@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="flavonoides.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="conexion" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Server =zola.iarc.fr ; Database = polyphenol; Uid = polyphenol; Pwd = dsjh87HG;</Value>
+    </Setting>
+    <Setting Name="path" Type="System.String" Scope="User">
+      <Value Profile="(Default)">D:/phenol/link.csv</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
