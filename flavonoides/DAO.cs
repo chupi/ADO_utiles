@@ -8,6 +8,7 @@ namespace flavonoides
 {
     public class DAO
     {
+        /*funcion que lee del excel la primera columna y lo pasa a un datatable*/
         public System.Data.DataTable pasar_excel_datatable(string sexcel)
         {
             /*System.Data.OleDb.OleDbConnection MyConnection = new System.Data.OleDb.OleDbConnection("provider=Microsoft.Jet.OLEDB.4.0; " + "data source=" + sexcel + "; " + "Extended Properties=Excel 8.0;");
@@ -45,6 +46,7 @@ namespace flavonoides
             return dt;
             
         }
+        /*filtra la tabla origen con los elementos de la columa clave de la tabla filtro*/
         public System.Data.DataTable Filter(System.Data.DataTable filtro, System.Data.DataTable origen, string clave)
         {
             int i = 0;
