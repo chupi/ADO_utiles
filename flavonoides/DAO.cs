@@ -32,6 +32,8 @@ namespace flavonoides
             return dt;
             
         }
+        /*Devolvemos un datatable con el resultado de la consulta que esta como paramatro en la bd cuyo string de conexion esta el parametro conexion del fichero de confi
+        guracon*/
         public System.Data.DataTable pasar_consulta_datatable(string consulta)
         {
             MySql.Data.MySqlClient.MySqlConnection mscon = new MySql.Data.MySqlClient.MySqlConnection(Properties.Settings.Default.conexion);
@@ -69,6 +71,7 @@ namespace flavonoides
             }
             return dtfiltrado;
         }
+        /*quita de un DataTable aquellas columnas que no tienen ningun valor*/
         public void Quitar_vacios(System.Data.DataTable dt)
         {
             int k = 1;
@@ -96,6 +99,7 @@ namespace flavonoides
                 }
             }
         }
+        /*mira si la la columna con nombre snombrecol del Datatable tiene valores*/
         public bool variable_vacia(System.Data.DataTable dt, string snombrecol)
         {
             int i = 0;
@@ -107,7 +111,8 @@ namespace flavonoides
             }
             return !llena;
         }
-
+    /*ejecuta la consulta que se pasa como parametro cogiendo la base de datos cuyo string de conexion esta en el parametro
+    conexion del fichero de configuracion*/
         public void ejecutar_sql(string sql)
         {
             try
@@ -126,6 +131,7 @@ namespace flavonoides
             }
             
         }
+        /*devuelve los nombres de las columnas de un Datatable*/
         public System.Collections.ArrayList nombres_columnas(System.Data.DataTable dt)
         {
             int i = 0;
@@ -138,7 +144,7 @@ namespace flavonoides
             }
             return alnom_col;
         }
-        
+        /*pasamos un array de DataRow a un DataTable*/
         public System.Data.DataTable pasar_datarow_datatable(System.Data.DataRow[] adr)
         {
             System.Data.DataTable dtfiltrado = new System.Data.DataTable();
@@ -152,6 +158,7 @@ namespace flavonoides
             }
             return dtfiltrado;
         }
+        /*extraemos un Datatable a un CSV con el path pasado como parametro*/
         public void ToCSV( System.Data.DataTable dt,string path)  
         {  
             System.Text.StringBuilder sb = new System.Text.StringBuilder();  
@@ -181,107 +188,11 @@ namespace flavonoides
             
             System.IO.File.WriteAllText(path, sb.ToString());
        }
-        public bool autentificar(string suser, string spassword)
-        {
-            System.Data.DataTable dteval = pasar_consulta_datatable("select * from persona where user='" + suser + "' and password='" + spassword + "'");
-            
-            bool baut = dteval.Rows.Count > 0;
-            return baut;
-        }
-        public System.Data.DataTable report(string sidestudio, string sidmaterial)
-        {
-            System.Data.DataTable dtreportini = pasar_consulta_datatable("call report_ini(" + sidestudio + "," + sidmaterial + ")");
-            System.Data.DataTable dtreportfin = pasar_consulta_datatable("call report_fin(" + sidestudio + "," + sidmaterial + ")");
-            ejecutar_sql("commit");
-            System.Data.DataTable dtmerge = encontrar_padres(dtreportfin, dtreportini);
-            ejecutar_sql("create temporary table merge_tmp(hijo INTEGER,padre INTEGER,PRIMARY KEY(hijo))");
-            int i = 0;
-            while (i<dtmerge.Rows.Count){
-                ejecutar_sql("insert into merge_tmp values("+dtmerge.Rows[i]["hijo"]+","+dtmerge.Rows[i]["padre"]+")");
-                i++;
-            }
-            System.Data.DataTable dtreport = pasar_consulta_datatable("select ri.*,rf.* from report_init ri left outer join merge_tmp mt on (ri.IdMuestraEsp=mt.padre) left outer join report_final rf on (mt.hijo = rf.IdMuestraEsp)");
-            dtreport.Columns.RemoveAt(0);
-            dtreport.Columns.RemoveAt(11);
-            ejecutar_sql("drop table if exists merge_tmp");
-            
-            return dtreport;
-
-        }
+        
         
 
-        public System.Data.DataTable encontrar_padres(System.Data.DataTable dtfinal, System.Data.DataTable dtorigen)
-        {
-            System.Data.DataTable dtmerge = new System.Data.DataTable();
-            System.Data.DataColumn dchijo = new System.Data.DataColumn("hijo");
-            System.Data.DataColumn dcpadre = new System.Data.DataColumn("padre");
-            //System.Data.DataColumn dcanalisis = new System.Data.DataColumn("analisis");
-            dtmerge.Columns.Add(dchijo);
-            dtmerge.Columns.Add(dcpadre);
-            //dtmerge.Columns.Add(dcanalisis);
-
-            int i = 0;
-            while (i < dtfinal.Rows.Count)
-            {
-                string shijo = dtfinal.Rows[i]["IdMuestraEsp"].ToString();
-                //Console.WriteLine("hijo:" + shijo);
-                encontrar_padre(dtmerge, shijo, dtorigen);
-                i++;
-            }
-            return dtmerge;
-
-        }
-        public void encontrar_padre(System.Data.DataTable dtresult, string shijo, System.Data.DataTable dtpadres)
-        {
-            string spos_padre;
-            //string sanalisis = "";
-            spos_padre = shijo;
-            /*System.Data.DataTable dtanalisis = pasar_consulta_datatable("SELECT GROUP_CONCAT(distinct nombre) AS analisis FROM origen LEFT OUTER JOIN analisis ON (origen.IdMuestraesp = analisis.IdMuestraesp) LEFT OUTER JOIN uso_esp ON (analisis.Id_Uso_General = uso_esp.Id_Uso_General) AND (analisis.Id_Uso = uso_esp.Id_Uso) where origen.IdMuestraesp2=" + spos_padre+" group by IdMuestraesp2");
-            if (dtanalisis.Rows.Count > 0)
-            {
-                sanalisis = dtanalisis.Rows[0][0].ToString();
-            }
-            Console.WriteLine("entro en despues de los analisis");*/
-            System.Data.DataRow[] mdrsel = dtpadres.Select("IdMuestraEsp=" + spos_padre);
-            while (mdrsel.Length == 0)
-            {
-                
-                DataTable dtpos_padre = pasar_consulta_datatable("SELECT IdMuestraesp2 from origen where IdMuestraesp=" + spos_padre);
-                spos_padre = dtpos_padre.Rows[0][0].ToString();
-                /*dtanalisis = pasar_consulta_datatable("SELECT GROUP_CONCAT( distinct nombre) AS analisis FROM origen LEFT OUTER JOIN analisis ON (origen.IdMuestraesp = analisis.IdMuestraesp) LEFT OUTER JOIN uso_esp ON (analisis.Id_Uso_General = uso_esp.Id_Uso_General) AND (analisis.Id_Uso = uso_esp.Id_Uso) where origen.IdMuestraesp2=" + spos_padre+" group by IdMuestraesp2");
-                Console.WriteLine("entro en antes de los analisis2");
-                if (dtanalisis.Rows.Count > 0 & dtanalisis.Rows[0][0].ToString().Length>0)
-                {
-                    if (sanalisis.Length > 0)
-                    {
-                        sanalisis = sanalisis + "," + dtanalisis.Rows[0][0].ToString();
-                    }
-                    else
-                    {
-                        sanalisis = dtanalisis.Rows[0][0].ToString();
-                    }
-                }
-                Console.WriteLine("entro en despues de los analisis2");*/
-                mdrsel = dtpadres.Select("IdMuestraEsp=" + spos_padre);
-            }
-            /*dtanalisis = pasar_consulta_datatable("SELECT GROUP_CONCAT( distinct nombre) AS analisis FROM analisis LEFT OUTER JOIN uso_esp ON (analisis.Id_Uso_General = uso_esp.Id_Uso_General) AND (analisis.Id_Uso = uso_esp.Id_Uso) where analisis.IdMuestraesp=" + spos_padre + " group by IdMuestraesp");
-            if (dtanalisis.Rows.Count > 0)
-            {
-                if (sanalisis.Length > 0)
-                {
-                    sanalisis = sanalisis + "," + dtanalisis.Rows[0][0].ToString();
-                }
-                else
-                {
-                    sanalisis = dtanalisis.Rows[0][0].ToString();
-                }
-            }*/
-            System.Data.DataRow drmerge = dtresult.NewRow();
-            drmerge["hijo"] = shijo;
-            drmerge["padre"] = spos_padre;
-            //drmerge["analisis"] = sanalisis;
-            dtresult.Rows.Add(drmerge);
-        }
+        
+        /* hacer un select distinct de un columna pero con DataTable*/
         public System.Collections.ArrayList sacar_val_posibles(System.Data.DataTable dt, string svariable)
         {
             System.Collections.ArrayList alval_pos = new ArrayList();
@@ -303,110 +214,5 @@ namespace flavonoides
             }
             return alval_pos;
         }
-        public void hacer_links(System.Data.DataTable dtlinks)
-        {
-
-            MySql.Data.MySqlClient.MySqlConnection mscon = new MySql.Data.MySqlClient.MySqlConnection(Properties.Settings.Default.conexion);
-            mscon.Open();
-            MySql.Data.MySqlClient.MySqlTransaction mst = mscon.BeginTransaction();
-           try
-            {              
-
-                
-                System.Collections.ArrayList alids = this.sacar_val_posibles(dtlinks, "ID");
-                int i = 0;
-                string swhere = "(";
-                while (i < alids.Count)
-                {
-                    string sid = alids[i].ToString();
-                    swhere = swhere + sid + ",";
-                    i++;
-                }
-                swhere = swhere.Remove(swhere.Length - 1);
-                swhere = swhere + ")";
-                MySql.Data.MySqlClient.MySqlCommand mscom = new MySql.Data.MySqlClient.MySqlCommand("delete from link where ID IN " + swhere, mscon,mst);
-                mscom.ExecuteNonQuery();
-                mscom = new MySql.Data.MySqlClient.MySqlCommand("update r24h set visited=TRUE where ID IN " + swhere, mscon, mst);
-                mscom.ExecuteNonQuery();
-
-                string sinsert = "insert into link(COUNTRY,OCCUSEQ,FDCLASS,GRPNAME,FDCODE,FDCODE2,ENGNAM,CTYNAM,FACETDESC,FREQ,FLAG,LENGNAM,LCTYNAM,DESC1,DESC2,DESC3,DESC4,DESC5,DESC6,DESC7,DESC8,DESC9,DESC10,FATATTACHED,ID,Yid_phenol,Ylegacy_id,Yname,Yfood_source_french,Yfood_source_scientific_name,Yfood_source_botanical_family,Yfood_subgroup,Yfood_group,YProp,Ysubfamily_1,Ysubfamily_2,Yfamily,Yfood_source,Ynotes,YEstimation,YCookmethod,Ycomment) values";
-                i = 0;
-                while (i < dtlinks.Rows.Count)
-                {
-                    if (dtlinks.Rows[i].RowState != System.Data.DataRowState.Deleted)
-                    {
-                        sinsert = sinsert + "(";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["COUNTRY"].ToString() + "',";
-                        sinsert = sinsert + dtlinks.Rows[i]["OCCUSEQ"].ToString() + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FDCLASS"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["GRPNAME"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FDCODE"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FDCODE2"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["ENGNAM"].ToString().Replace("'","\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["CTYNAM"].ToString().Replace("'","\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FACETDESC"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FREQ"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FLAG"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["LENGNAM"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["LCTYNAM"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC1"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC2"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC3"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC4"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC5"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC6"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC7"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC8"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC9"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["DESC10"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["FATATTACHED"].ToString() + "',";
-                        sinsert = sinsert + dtlinks.Rows[i]["ID"].ToString() + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yid_phenol"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Ylegacy_id"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yname"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_source_french"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_source_scientific_name"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_source_botanical_family"].ToString().Replace("'", "\\'") + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_subgroup"].ToString() + "',";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_group"].ToString() + "',";
-                        sinsert = sinsert + dtlinks.Rows[i]["YProp"].ToString() + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Ysubfamily_1"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Ysubfamily_2"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfamily"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Yfood_source"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Ynotes"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["YEstimation"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["YCookmethod"].ToString() + "'" + ",";
-                        sinsert = sinsert + "'" + dtlinks.Rows[i]["Ycomment"].ToString().Replace("'", "\\'") + "'),";
-
-                    }
-                    i++;
-                }
-                sinsert = sinsert.Remove(sinsert.Length - 1);
-                mscom = new MySql.Data.MySqlClient.MySqlCommand(sinsert, mscon, mst);
-                mscom.ExecuteNonQuery();
-                mst.Commit();
-                mscon.Close();
-            }
-            catch (MySql.Data.MySqlClient.MySqlException le)
-            {
-                LinkException len;
-                if (le.Number == 1062)
-                {
-                    len = new LinkException("It's not posible to have the same link two times");
-                }
-                else
-                {
-                    len = new LinkException("The Estimation and cook method code must be correct codes");
-                }
-
-                mst.Rollback();
-                mscon.Close();
-                throw len;
-            }
-        }
-       
-
-
     }
 }
