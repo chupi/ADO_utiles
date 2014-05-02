@@ -215,4 +215,49 @@ namespace flavonoides
             return alval_pos;
         }
     }
+    /* a partir de un datatable donde la primera columna son el nombre de las variables y en la segunda columna el valor
+    inserta en la tabla puesta como parametro*/
+    public string insertar(string tabla, DataTable datos){
+            string consulta = "INSERT INTO " + tabla + " (";
+            int i = 0;
+            while (i < datos.Rows.Count)
+            {
+                string variable = datos.Rows[i][0].ToString();
+                consulta = consulta+variable + ",";
+                i++;
+            }
+            consulta = consulta.Remove(consulta.Length - 1);
+            consulta = consulta + ") VALUES (";
+            i = 0;
+            while (i < datos.Rows.Count)
+            {
+                string variable = datos.Rows[i][1].ToString();
+                consulta = consulta + variable + ",";
+                i++;
+            }
+            consulta = consulta.Remove(consulta.Length - 1);
+            consulta = consulta + ")";
+            return consulta;
+        }
+        /*pasa el datatable a JSON*/
+        public string GetJson(DataTable dt)
+        {
+            System.Web.Script.Serialization.JavaScriptSerializer serializer = new
+
+            System.Web.Script.Serialization.JavaScriptSerializer();
+            List<Dictionary<string, object>> rows =
+              new List<Dictionary<string, object>>();
+            Dictionary<string, object> row = null;
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                row = new Dictionary<string, object>();
+                foreach (DataColumn col in dt.Columns)
+                {
+                    row.Add(col.ColumnName.Trim(), dr[col]);
+                }
+                rows.Add(row);
+            }
+            return serializer.Serialize(rows);
+        }
 }
